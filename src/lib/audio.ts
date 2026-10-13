@@ -7,8 +7,21 @@ export function audioCtx(): AudioContext | null {
   const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!AC) return null;
   ctx = ctx ?? new AC();
-  if (ctx.state === "suspended") void ctx.resume();
+  if (ctx.state !== "running") void ctx.resume();
   return ctx;
+}
+
+// Celulares (iOS/Android) criam o áudio "suspenso" e só liberam após um toque. Destrava no 1º toque.
+export function unlockAudio() {
+  const c = audioCtx();
+  if (!c) return;
+  try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch {}
+}
+if (typeof window !== "undefined") {
+  const once = () => { unlockAudio(); window.removeEventListener("pointerdown", once); window.removeEventListener("touchend", once); window.removeEventListener("keydown", once); };
+  window.addEventListener("pointerdown", once, { passive: true });
+  window.addEventListener("touchend", once, { passive: true });
+  window.addEventListener("keydown", once);
 }
 
 export type Ambient = "none" | "rain" | "cafe" | "brown";
@@ -138,11 +151,13 @@ function tone(c: AudioContext, freq: number, t0: number, dur: number, vol: numbe
   o.start(t0); o.stop(t0 + dur + 0.05);
 }
 
-export function playTimbre(t: Timbre = "nexora_pulse", volume = 0.85) {
+export async function playTimbre(t: Timbre = "nexora_pulse", volume = 0.85) {
   const c = audioCtx();
   if (!c) return;
-  const v = Math.min(1, Math.max(0, volume)) * 0.35;
-  const n = c.currentTime + 0.02;
+  // No celular o relógio do áudio fica parado até o resume() terminar; agendar antes deixa o som mudo.
+  if (c.state !== "running") { try { await c.resume(); } catch {} }
+  const v = Math.min(1, Math.max(0, volume)) * 0.6;
+  const n = c.currentTime + 0.05;
   switch (t) {
     case "nexora_pulse":
       tone(c, 659.25, n, 0.7, v); tone(c, 987.77, n + 0.18, 0.9, v * 0.8); tone(c, 1318.5, n + 0.18, 0.9, v * 0.25);
