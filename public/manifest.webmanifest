@@ -1,0 +1,11 @@
+{
+  "name": "NEXORA",
+  "short_name": "NEXORA",
+  "description": "Produtividade circadiana e foco em fluxo contínuo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0d11",
+  "theme_color": "#0b0d11",
+  "lang": "pt-BR",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
