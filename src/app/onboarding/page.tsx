@@ -1,5 +1,6 @@
 "use client";
 import { ArrowLeft, ArrowRight, Briefcase, Check, GraduationCap, Layers, Play, Sparkles, Sprout, Zap } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Field, Switch } from "@/components/ui";
@@ -53,7 +54,10 @@ export default function Onboarding() {
     <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col px-5 pb-8 pt-[calc(1.25rem+env(safe-area-inset-top))]">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2.5"><span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-periwinkle to-primary-container text-white"><Layers size={18} /></span><span className="text-xl font-extrabold tracking-[.04em]">NEXORA</span><span className="chip !text-primary-soft">SETUP</span></div>
-        <button onClick={skip} className="text-sm text-ink-mute hover:text-ink">Pular para início</button>
+        <div className="flex items-center gap-3">
+          <Link href="/entrar" className="text-sm font-semibold text-primary-soft hover:underline">Já tem conta? Entrar</Link>
+          <button onClick={skip} className="text-sm text-ink-mute hover:text-ink">Pular</button>
+        </div>
       </header>
 
       <div className="mt-6" aria-label={`Passo ${step + 1} de 4`}>
@@ -66,6 +70,10 @@ export default function Onboarding() {
           <div className="flex flex-col gap-6 animate-rise">
             <h1 className="text-4xl font-bold leading-[1.1] tracking-[-0.035em]">Domine seu dia com <span className="bg-gradient-to-r from-primary-soft to-periwinkle bg-clip-text text-transparent">IA</span></h1>
             <p className="text-ink-dim">Produtividade circadiana e foco em fluxo contínuo. Tudo funciona offline, é gratuito e fica salvo no seu dispositivo.</p>
+            <div className="flex items-center justify-between rounded-lg border border-stroke bg-surface-2 p-3 text-xs">
+              <span className="text-ink-dim">Já possui uma conta salva no Nexora?</span>
+              <Link href="/entrar" className="font-semibold text-primary-soft hover:underline">Fazer login agora →</Link>
+            </div>
             <Field label="Como devemos te chamar?"><input className="input h-12 text-base" value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" maxLength={40} autoFocus /></Field>
             <ul className="grid gap-2 text-sm text-ink-dim">
               {["Comando rápido em linguagem natural", "Timer de foco com ondas binaurais", "Copilot que reorganiza sua agenda", "Alarmes sonoros e notas em Markdown"].map((t) => <li key={t} className="flex items-center gap-2"><Check size={15} className="text-emerald" />{t}</li>)}

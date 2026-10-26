@@ -3,6 +3,7 @@ import { Bell, BarChart3, CalendarDays, Hourglass, Inbox, LayoutGrid, Plus, Sear
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 import { useApp } from "@/store/app";
 import { useTimer } from "@/store/timer";
 import { useUI } from "@/store/ui";
@@ -51,6 +52,30 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const sb = supabase();
+    if (!sb) return;
+    const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        useApp.getState().setUserId(session.user.id);
+        useApp.getState().setSettings({ onboarded: true });
+        const email = session.user.email;
+        const name = session.user.user_metadata?.name || session.user.user_metadata?.full_name;
+        if (email || name) {
+          useApp.getState().setProfile({
+            ...(email ? { email } : {}),
+            ...(name && useApp.getState().profile.name === "Você" ? { name } : {}),
+          });
+        }
+      } else if (event === "SIGNED_OUT") {
+        useApp.getState().setUserId(null);
+      }
+    });
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!ready) return;
     useApp.getState().tick();
     const a = setInterval(() => useApp.getState().tick(), 10000);
@@ -67,13 +92,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [setPalette]);
 
   useEffect(() => {
-    if (ready && !onboarded && path !== "/onboarding") router.replace("/onboarding");
+    if (ready && !onboarded && path !== "/onboarding" && path !== "/entrar") router.replace("/onboarding");
   }, [ready, onboarded, path, router]);
 
   if (!mounted || !ready) {
     return <div className="grid min-h-dvh place-items-center"><div className="flex items-center gap-3 text-ink-dim"><span className="grid h-9 w-9 place-items-center rounded-lg bg-primary/20 text-primary-soft"><Zap size={18} /></span><span className="text-sm font-semibold tracking-wide">NEXORA</span></div></div>;
   }
-  if (path === "/onboarding") return <>{children}<Toasts toasts={toasts} dismiss={dismiss} /></>;
+  if (path === "/onboarding" || (path === "/entrar" && !onboarded)) return <>{children}<Toasts toasts={toasts} dismiss={dismiss} /></>;
 
   const running = timerStatus !== "idle";
   const hideFab = path === "/ia" || path === "/foco";

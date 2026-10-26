@@ -6,7 +6,12 @@ export const metadata: Metadata = {
   title: "NEXORA — Produtividade circadiana com IA",
   description: "Agenda inteligente, foco em fluxo contínuo e Copilot de IA. Local-first, gratuito e offline.",
   manifest: "/manifest.webmanifest",
-  icons: { icon: "/icon.svg" },
+  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "NEXORA",
+  },
 };
 export const viewport: Viewport = { themeColor: "#0b0d11", width: "device-width", initialScale: 1, viewportFit: "cover" };
 

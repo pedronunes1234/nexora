@@ -120,11 +120,59 @@ export const useApp = create<AppState>()(
         toasts: [], ringing: null, paletteOpen: false,
 
         hydrate: async () => {
+          if (typeof window !== "undefined" && useApp.persist) {
+            try {
+              await useApp.persist.rehydrate();
+            } catch (err) {
+              console.warn("Falha na reidratação do estado:", err);
+            }
+          }
+
           const d = db();
           const [tasks, events, sessions, habits, notes, cards, captures, notifications] = await Promise.all([
             d.tasks.toArray(), d.events.toArray(), d.sessions.toArray(), d.habits.toArray(), d.notes.toArray(), d.cards.toArray(), d.captures.toArray(), d.notifications.toArray(),
           ]);
-          set({ tasks, events, sessions, habits, notes, cards, captures, notifications: notifications.sort((a, b) => (a.created_at < b.created_at ? 1 : -1)), ready: true });
+
+          let activeUserId = get().userId;
+          const sb = supabase();
+          if (sb) {
+            try {
+              const { data } = await sb.auth.getSession();
+              if (data?.session?.user) {
+                const user = data.session.user;
+                activeUserId = user.id;
+                const email = user.email;
+                const name = user.user_metadata?.name || user.user_metadata?.full_name;
+                set((st) => ({
+                  userId: activeUserId,
+                  settings: { ...st.settings, onboarded: true },
+                  profile: {
+                    ...st.profile,
+                    email: email ?? st.profile.email,
+                    name: st.profile.name === "Você" && name ? name : st.profile.name,
+                  },
+                }));
+              }
+            } catch (err) {
+              console.warn("Falha ao recuperar sessão do Supabase:", err);
+            }
+          }
+
+          set({
+            tasks,
+            events,
+            sessions,
+            habits,
+            notes,
+            cards,
+            captures,
+            notifications: notifications.sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
+            ready: true,
+          });
+
+          if (activeUserId && sb) {
+            void get().sync();
+          }
         },
         setProfile: (p) => set((s) => ({ profile: { ...s.profile, ...p } })),
         setSettings: (p) => set((s) => ({ settings: { ...s.settings, ...p } })),
@@ -345,7 +393,7 @@ export const useApp = create<AppState>()(
     },
     {
       name: "nexora.app",
-      partialize: (s) => ({ profile: s.profile, settings: s.settings, tombstones: s.tombstones, lastSync: s.lastSync }),
+      partialize: (s) => ({ userId: s.userId, profile: s.profile, settings: s.settings, tombstones: s.tombstones, lastSync: s.lastSync }),
     },
   ),
 );
